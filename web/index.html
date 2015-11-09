@@ -7,13 +7,58 @@
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
 
     <script type="text/javascript" src="js/d3.js"></script>
-    <script type="text/javascript" src="js/nanofilter.js"></script>
     <script type="text/javascript" src="js/crossfilter.js"></script><!-- for sorting functions -->
     <script type="text/javascript" src="js/dc.js"></script>
 
+    <script type="text/javascript" src="js/querystring.js"></script>
+
+    <script type="text/javascript" src="js/nanofilter.js"></script>
   </head>
 
   <body>
     <h3>dc.js on nanocubes</h3>
+    <div id='types'></div>
+    <div id='times'></div>
+    <script type="text/javascript">
+      var typesChart = dc.barChart("#types");
+      var timesChart = dc.lineChart("#times");
+      var qs = querystring.parse();
+      if(!qs.server && !qs.port) {
+          d3.select('body').append('p').text('Need server and port');
+      }
+      else {
+          var nf = nanofilter(qs.server, qs.port, function(error, result) {
+              if(error)
+                  throw new Error(error);
+
+              function commitHandler(isRender, k) {
+                  nf.commit(k);
+              }
+              var typesDim = nf.dimension('Primary_Type'),
+                  typesGroup = typesDim.group(),
+                  timesDim = nf.dimension('Date'),
+                  timesGroup = timesDim.group();
+
+              typesChart
+                  .width(768)
+                  .height(480)
+                  .x(d3.scale.ordinal())
+                  .xUnits(dc.units.ordinal)
+                  .dimension(typesDim)
+                  .group(typesGroup)
+                  .commitHandler(commitHandler);
+
+              timesChart
+                  .width(768)
+                  .height(480)
+                  .dimension(timesDim)
+                  .group(timesGroup)
+                  .commitHandler(commitHandler);
+
+              typesChart.renderGroup();
+
+          });
+      }
+  </script>
   </body>
 </html>
