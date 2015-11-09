@@ -1,0 +1,8 @@
+/*!
+ *  nanofilter <%= conf.pkg.version %>
+ *  http://gordonwoodhull.github.io/nanofilter/
+ *  Copyright (c) 2012-2013 AT&T Intellectual Property
+ *
+ *  Licensed under the Eclipse Public License
+ *  https://github.com/gordonwoodhull/nanofilter/blob/master/LICENSE
+ */
