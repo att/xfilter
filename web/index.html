@@ -10,6 +10,7 @@
     <script type="text/javascript" src="js/crossfilter.js"></script><!-- for sorting functions -->
     <script type="text/javascript" src="js/dc.js"></script>
 
+    <script type="text/javascript" src="js/queue.js"></script>
     <script type="text/javascript" src="js/querystring.js"></script>
 
     <script type="text/javascript" src="js/nanofilter.js"></script>
@@ -35,9 +36,9 @@
                   nf.commit(k);
               }
               var typesDim = nf.dimension('Primary_Type'),
-                  typesGroup = typesDim.group(),
+                  typesGroup = typesDim.group().dive('[]', 1),
                   timesDim = nf.dimension('Date'),
-                  timesGroup = timesDim.group();
+                  timesGroup = timesDim.group().mt_interval_sequence(480, 24, 10);
 
               typesChart
                   .width(768)
@@ -53,6 +54,8 @@
                   .height(480)
                   .dimension(timesDim)
                   .group(timesGroup)
+                  .x(d3.scale.linear())
+                  .elasticX(true).elasticY(true)
                   .commitHandler(commitHandler);
 
               typesChart.renderGroup();
