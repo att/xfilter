@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
 
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+    <link rel="stylesheet" type="text/css" href="css/index.css"/>
 
     <script type="text/javascript" src="js/d3.js"></script>
     <script type="text/javascript" src="js/crossfilter.js"></script><!-- for sorting functions -->
@@ -18,8 +19,8 @@
 
   <body>
     <h3>dc.js on nanocubes</h3>
-    <div id='types'></div>
     <div id='times'></div>
+    <div id='types'></div>
     <script type="text/javascript">
       var typesChart = dc.barChart("#types");
       var timesChart = dc.lineChart("#times");
@@ -40,15 +41,6 @@
                   timesDim = nf.dimension('Date'),
                   timesGroup = timesDim.group().mt_interval_sequence(480, 24, 10);
 
-              typesChart
-                  .width(768)
-                  .height(480)
-                  .x(d3.scale.ordinal())
-                  .xUnits(dc.units.ordinal)
-                  .dimension(typesDim)
-                  .group(typesGroup)
-                  .commitHandler(commitHandler);
-
               timesChart
                   .width(768)
                   .height(480)
@@ -56,7 +48,29 @@
                   .group(timesGroup)
                   .x(d3.scale.linear())
                   .elasticX(true).elasticY(true)
-                  .commitHandler(commitHandler);
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler);
+
+              typesChart
+                  .width(768)
+                  .height(600)
+                  .x(d3.scale.ordinal())
+                  .margins({left: 70, top: 0, right: 0, bottom: 200})
+                  .xUnits(dc.units.ordinal)
+                  .dimension(typesDim)
+                  .group(typesGroup)
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler)
+                  .on('pretransition', function(chart) {
+                  .margins({left: 70, top: 0, right: 0, bottom: 20})
+                      // rotate labels - swear I did this in CSS once
+                      chart.selectAll('g.axis.x text')
+                          .style('text-anchor', 'start')
+                  .round(Math.round)
+                          .attr("dy", "-.4em")
+                          .attr("dx", ".75em")
+                          .attr('transform', 'rotate(90)');
+                  })
 
               typesChart.renderGroup();
 
