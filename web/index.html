@@ -19,8 +19,20 @@
 
   <body>
     <h3>dc.js on nanocubes</h3>
-    <div id='times'></div>
-    <div id='types'></div>
+    <div id='times'>
+      <div>
+        <b>Crimes by Date</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:timesChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div>
+    <div id='types'>
+      <div>
+        <b>Crimes by Type</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:typesChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div>
     <script type="text/javascript">
       // define our own filter handler to avoid the dreaded filterFunction
       var filterHandler = function (dimension, filters) {
@@ -68,6 +80,7 @@
                   .round(Math.round)
                   .x(d3.scale.linear())
                   .elasticX(true).elasticY(true)
+                  .controlsUseVisibility(true)
                   .commitHandler(commitHandler)
                   .filterHandler(filterHandler);
 
@@ -75,10 +88,12 @@
                   .width(768)
                   .height(600)
                   .x(d3.scale.ordinal())
+                  .elasticY(true)
                   .margins({left: 70, top: 0, right: 0, bottom: 200})
                   .xUnits(dc.units.ordinal)
                   .dimension(typesDim)
                   .group(typesGroup)
+                  .controlsUseVisibility(true)
                   .commitHandler(commitHandler)
                   .filterHandler(filterHandler)
                   .on('pretransition', function(chart) {
