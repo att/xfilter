@@ -24,7 +24,7 @@
   "dependencies": {
     "crossfilter": "1.x",
     "d3": "3.x",
-    "dc": "dc-js/dc.js#develop"
+    "dc": ">=2.0.0-beta.22"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
