@@ -22,8 +22,26 @@
     <div id='times'></div>
     <div id='types'></div>
     <script type="text/javascript">
-      var typesChart = dc.barChart("#types");
+      // define our own filter handler to avoid the dreaded filterFunction
+      var filterHandler = function (dimension, filters) {
+          if (filters.length === 0) {
+              dimension.filter(null);
+          } else if (filters.length === 1 && !filters[0].isFiltered) {
+              // single value and not a function-based filter
+              dimension.filterExact(filters[0]);
+          } else if (filters.length === 1 && filters[0].filterType === 'RangedFilter') {
+              // single range-based filter
+              dimension.filterRange(filters[0]);
+          } else {
+              // this is the case changed from core dc.js
+              // filterMultiple does not exist in crossfilter
+              dimension.filterMultiple(filters);
+          }
+          return filters;
+      };
+
       var timesChart = dc.lineChart("#times");
+      var typesChart = dc.barChart("#types");
       var qs = querystring.parse();
       if(!qs.server && !qs.port) {
           d3.select('body').append('p').text('Need server and port');
@@ -44,8 +62,10 @@
               timesChart
                   .width(768)
                   .height(480)
+                  .margins({left: 70, top: 0, right: 0, bottom: 20})
                   .dimension(timesDim)
                   .group(timesGroup)
+                  .round(Math.round)
                   .x(d3.scale.linear())
                   .elasticX(true).elasticY(true)
                   .commitHandler(commitHandler)
@@ -62,11 +82,9 @@
                   .commitHandler(commitHandler)
                   .filterHandler(filterHandler)
                   .on('pretransition', function(chart) {
-                  .margins({left: 70, top: 0, right: 0, bottom: 20})
                       // rotate labels - swear I did this in CSS once
                       chart.selectAll('g.axis.x text')
                           .style('text-anchor', 'start')
-                  .round(Math.round)
                           .attr("dy", "-.4em")
                           .attr("dx", ".75em")
                           .attr('transform', 'rotate(90)');

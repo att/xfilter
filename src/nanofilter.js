@@ -66,6 +66,11 @@ function nanofilter(server, port, k) {
                 _filters[field] = {type: 'set', target: [val]};
                 return this;
             },
+            filterMultiple: function(vals) { // unique to nanocubes
+                vals = toValues(vals);
+                _filters[field] = {type: 'set', target: vals};
+                return this;
+            },
             filterRange: function(range) {
                 range = toValues(range);
                 _filters[field] = {type: 'interval', target: range};
@@ -151,11 +156,6 @@ function nanofilter(server, port, k) {
             k(error, schema);
         else {
             _schema = schema;
-            k(error, schema);
-        }
-    });
-
-    return nf;
             _schema.fields.forEach(function(f) {
                 _fields[f.name] = f;
                 if(/^nc_dim_cat_/.test(f.type)) {
@@ -167,4 +167,9 @@ function nanofilter(server, port, k) {
                     };
                 }
             });
+            k(error, schema);
+        }
+    });
+
+    return nf;
 }
