@@ -7,7 +7,7 @@
  *  https://github.com/gordonwoodhull/nanofilter/blob/master/LICENSE
  */
 function nanofilter(server, port, k) {
-    var _schema, _filters = {}, _groups = {}, _data, _group_id = 17;
+    var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
 
     function query_url(q) {
         return 'http://' + server + ':' + port + '/' + q;
@@ -53,6 +53,15 @@ function nanofilter(server, port, k) {
             throw new Error('no schema');
         if(!_schema.fields.find(function(f) { return f.name === field; }))
             throw new Error('field ' + field + ' not found in schema');
+
+        function toValues(v) {
+            if(!_xform[field])
+                return v;
+            if(v instanceof Array)
+                return v.map(toValues);
+            return _fields[field].valnames[v];
+        }
+
         return {
             filter: function(v) {
                 if(v !== null)
@@ -61,10 +70,17 @@ function nanofilter(server, port, k) {
                 return this;
             },
             filterExact: function(val) {
+                val = toValues(val);
                 _filters[field] = {type: 'set', target: [val]};
                 return this;
             },
+            filterMultiple: function(vals) { // unique to nanocubes
+                vals = toValues(vals);
+                _filters[field] = {type: 'set', target: vals};
+                return this;
+            },
             filterRange: function(range) {
+                range = toValues(range);
                 _filters[field] = {type: 'interval', target: range};
                 return this;
             },
@@ -129,9 +145,12 @@ function nanofilter(server, port, k) {
                 throw new Error('unexpected number of arguments ' + arguments.length);
 
             for(var i = 1; i < arguments.length; ++i) {
-                var result = arguments[i], id = ids[i-1];
-                _groups[id].values = result.root.children.map(function(pv) {
-                    return {key: pv.path[0], value: pv.val};
+                var result = arguments[i],
+                    id = ids[i-1],
+                    group = _groups[id],
+                    xform = _xform[group.dimension];
+                group.values = result.root.children.map(function(pv) {
+                    return {key: xform ? xform(pv.path[0]) : pv.path[0], value: pv.val};
                 });
             }
             if(!error && validate(result))
@@ -145,6 +164,17 @@ function nanofilter(server, port, k) {
             k(error, schema);
         else {
             _schema = schema;
+            _schema.fields.forEach(function(f) {
+                _fields[f.name] = f;
+                if(/^nc_dim_cat_/.test(f.type)) {
+                    var vn = [];
+                    for(var vname in f.valnames)
+                        vn[f.valnames[vname]] = vname;
+                    _xform[f.name] = function(v) {
+                        return vn[v];
+                    };
+                }
+            });
             k(error, schema);
         }
     });
