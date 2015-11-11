@@ -137,6 +137,7 @@ module.exports = function (grunt) {
                             '<%= conf.pkg.name %>.min.js.map',
                             'node_modules/d3/d3.js',
                             'node_modules/crossfilter/crossfilter.js',
+                            'node_modules/dc/dc.js',
                             'test/env-data.js'
                         ],
                         dest: '<%= conf.web %>/js/'
