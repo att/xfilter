@@ -67,7 +67,7 @@
                   nf.commit(k);
               }
               var typesDim = nf.dimension('Primary_Type'),
-                  typesGroup = typesDim.group().dive('[]', 1),
+                  typesGroup = typesDim.group().dive([], 1),
                   timesDim = nf.dimension('Date'),
                   timesGroup = timesDim.group().mt_interval_sequence(480, 24, 10);
 

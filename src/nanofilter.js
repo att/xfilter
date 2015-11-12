@@ -33,8 +33,8 @@ function nanofilter(server, port, k) {
             }
             parts.push('.r("' + f + '",' + filter + ')');
         }
-        if(group.type)
-            parts.push('.a("' + group.dimension + '",' + group.type + '(' + group.args.join(',') + '))');
+        if(group.print)
+            parts.push('.a("' + group.dimension + '",' + group.print() + ')');
         return parts.join('');
     }
 
@@ -42,16 +42,21 @@ function nanofilter(server, port, k) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null};
         _groups[_id] = _anchor;
 
-        function capture(name) {
+        function arg_printer(name /* ... */) {
+            var args = Array.prototype.slice.call(arguments, 1);
             return function() {
-                _anchor.type = name;
-                _anchor.args = Array.prototype.slice.call(arguments, 0);
-                return this;
+                return name + '(' + args.map(JSON.stringify).join(',') + ')';
             };
         }
         return {
-            mt_interval_sequence: capture('mt_interval_sequence'),
-            dive: capture('dive'),
+            mt_interval_sequence: function(start, wid, len) {
+                _anchor.print = arg_printer('mt_interval_sequence', start, wid, len);
+                return this;
+            },
+            dive: function(bins, depth) {
+                _anchor.print = arg_printer('dive', bins, depth);
+                return this;
+            },
             dispose: function() {
                 delete _groups[_id];
                 _anchor.values = null;
