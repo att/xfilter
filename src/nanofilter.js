@@ -38,6 +38,31 @@ function nanofilter(server, port, k) {
         return parts.join('');
     }
 
+    function create_group(dimension) {
+        var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null};
+        _groups[_id] = _anchor;
+
+        function capture(name) {
+            return function() {
+                _anchor.type = name;
+                _anchor.args = Array.prototype.slice.call(arguments, 0);
+                return this;
+            };
+        }
+        return {
+            mt_interval_sequence: capture('mt_interval_sequence'),
+            dive: capture('dive'),
+            dispose: function() {
+                delete _groups[_id];
+                _anchor.values = null;
+                return this;
+            },
+            all: function() {
+                return _anchor.values;
+            }
+        };
+    }
+
     var nf = {};
 
     nf.dimension = function(field) {
@@ -84,28 +109,7 @@ function nanofilter(server, port, k) {
                 return this;
             },
             group: function() {
-                var _id = _group_id++, _anchor = {id: _id, dimension: field, values: null};
-                _groups[_id] = _anchor;
-
-                function capture(name) {
-                    return function() {
-                        _anchor.type = name;
-                        _anchor.args = Array.prototype.slice.call(arguments, 0);
-                        return this;
-                    };
-                }
-                return {
-                    mt_interval_sequence: capture('mt_interval_sequence'),
-                    dive: capture('dive'),
-                    dispose: function() {
-                        delete _groups[_id];
-                        _anchor.values = null;
-                        return this;
-                    },
-                    all: function() {
-                        return _anchor.values;
-                    }
-                };
+                return create_group(field);
             }
         };
     };
