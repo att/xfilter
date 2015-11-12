@@ -97,7 +97,7 @@ function nanofilter(server, port, k) {
                 return v;
             if(v instanceof Array)
                 return v.map(toValues);
-            return _fields[field].valnames[v];
+            return _xform[field].to(v);
         }
 
         return {
@@ -167,7 +167,7 @@ function nanofilter(server, port, k) {
                     group = _groups[id],
                     xform = _xform[group.dimension];
                 group.values = result.root.children.map(function(pv) {
-                    return {key: xform ? xform(pv.path[0]) : pv.path[0], value: pv.val};
+                    return {key: xform ? xform.fro(pv.path[0]) : pv.path[0], value: pv.val};
                 });
             }
             if(!error && validate(result))
@@ -187,13 +187,25 @@ function nanofilter(server, port, k) {
                     var vn = [];
                     for(var vname in f.valnames)
                         vn[f.valnames[vname]] = vname;
-                    _xform[f.name] = function(v) {
-                        return vn[v];
+                    _xform[f.name] = {
+                        to: function(v) {
+                            return f.valnames[v];
+                        },
+                        fro: function(v) {
+                            return vn[v];
+                        }
                     };
                 }
                 else if(/^nc_dim_time_/.test(f.type)) {
-                    _xform[f.name] = function(v) {
-                        return new Date(_start_time + v * _resolution);
+                    _xform[f.name] = {
+                        to: function(v) {
+                            // where in d3/dc does it get coerced to number?
+                            v = typeof v === 'number' ? v : v.now;
+                            return (v - _start_time)/_resolution;
+                        },
+                        fro: function(v) {
+                            return new Date(_start_time + v * _resolution);
+                        }
                     };
                 }
             });
