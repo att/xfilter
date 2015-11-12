@@ -1,5 +1,6 @@
 function nanofilter(server, port, k) {
     var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
+    var _start_time, _resolution; // in ms (since epoch for start)
 
     function query_url(q) {
         return 'http://' + server + ':' + port + '/' + q;
@@ -49,12 +50,27 @@ function nanofilter(server, port, k) {
             };
         }
         return {
-            mt_interval_sequence: function(start, wid, len) {
-                _anchor.print = arg_printer('mt_interval_sequence', start, wid, len);
+            // native interface
+            mt_interval_sequence: function(start, binwid, len) { // ints
+                _anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
                 return this;
             },
             dive: function(bins, depth) {
                 _anchor.print = arg_printer('dive', bins, depth);
+                return this;
+            },
+            // somewhat nicer interface
+            time: function(start, binwid, len) { // Date, ms, number
+                start = start ? start.now() : _start_time;
+                binwid = binwid || _resolution;
+                len = len || 10*365;
+                var startb = (start - _start_time)/_resolution,
+                    widb = binwid/_resolution;
+                this.mt_interval_sequence(startb, widb, len);
+                return this;
+            },
+            categorical: function() {
+                this.dive([], 1);
                 return this;
             },
             dispose: function() {
@@ -174,6 +190,19 @@ function nanofilter(server, port, k) {
                     _xform[f.name] = function(v) {
                         return vn[v];
                     };
+                }
+                else if(/^nc_dim_time_/.test(f.type)) {
+                    _xform[f.name] = function(v) {
+                        return new Date(_start_time + v * _resolution);
+                    };
+                }
+            });
+            _schema.metadata.forEach(function(m) {
+                if(m.key === 'tbin') {
+                    var parts = m.value.split('_');
+                    _start_time = Date.parse(parts[0] + ' ' + parts[1]);
+                    if(/^[0-9]+s$/.test(parts[2]))
+                        _resolution = +parts[2].substr(0, parts[2].length-1) * 1000;
                 }
             });
             k(error, schema);

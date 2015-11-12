@@ -67,9 +67,9 @@
                   nf.commit(k);
               }
               var typesDim = nf.dimension('Primary_Type'),
-                  typesGroup = typesDim.group().dive([], 1),
+                  typesGroup = typesDim.group().categorical(),
                   timesDim = nf.dimension('Date'),
-                  timesGroup = timesDim.group().mt_interval_sequence(480, 24, 10);
+                  timesGroup = timesDim.group().time();
 
               timesChart
                   .width(768)
@@ -78,7 +78,8 @@
                   .dimension(timesDim)
                   .group(timesGroup)
                   .round(Math.round)
-                  .x(d3.scale.linear())
+                  .x(d3.time.scale())
+                  .xUnits(d3.time.days)
                   .elasticX(true).elasticY(true)
                   .controlsUseVisibility(true)
                   .commitHandler(commitHandler)
