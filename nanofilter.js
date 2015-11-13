@@ -163,6 +163,18 @@ function nanofilter(server, port, k) {
         return a.key < b.key ? -1 : a.key > b.key ? 1 : a.key >= b.key ? 0 : NaN;
     }
 
+    function ms_mult(suffix) {
+        var mult = 1;
+        switch(suffix) {
+        case 'w': mult *= 7;
+        case 'd': mult *= 24;
+        case 'h': mult *= 60;
+        case 'm': mult *= 60;
+        case 's': return mult*1000;
+        default: return NaN;
+        }
+    }
+
     nf.commit = function(k) {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
@@ -227,8 +239,11 @@ function nanofilter(server, port, k) {
                 if(m.key === 'tbin') {
                     var parts = m.value.split('_');
                     _start_time = Date.parse(parts[0] + ' ' + parts[1]);
-                    if(/^[0-9]+s$/.test(parts[2]))
-                        _resolution = +parts[2].substr(0, parts[2].length-1) * 1000;
+                    var match;
+                    if((match = /^([0-9]+)([a-z]+)$/.exec(parts[2]))) {
+                        var mult = ms_mult(match[2]);
+                        _resolution = +match[1] * mult;
+                    }
                 }
             });
             k(error, schema);
