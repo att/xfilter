@@ -151,6 +151,10 @@ function nanofilter(server, port, k) {
         expect('root', 'children');
     }
 
+    function key_ascending(a, b) { // adapted from d3.ascending
+        return a.key < b.key ? -1 : a.key > b.key ? 1 : a.key >= b.key ? 0 : NaN;
+    }
+
     nf.commit = function(k) {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
@@ -167,8 +171,12 @@ function nanofilter(server, port, k) {
                     group = _groups[id],
                     xform = _xform[group.dimension];
                 group.values = result.root.children.map(function(pv) {
-                    return {key: xform ? xform.fro(pv.path[0]) : pv.path[0], value: pv.val};
-                }).sort(function(kv) { return kv.key; });
+                    return {key: pv.path[0], value: pv.val};
+                })
+                    .sort(key_ascending)
+                    .map(function(kv) {
+                        return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
+                    });
             }
             if(!error && validate(result))
                 _data = result;
