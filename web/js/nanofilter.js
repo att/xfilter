@@ -8,6 +8,7 @@
  */
 function nanofilter(server, port, k) {
     var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
+    var _start_time, _resolution; // in ms (since epoch for start)
 
     function query_url(q) {
         return 'http://' + server + ':' + port + '/' + q;
@@ -41,9 +42,54 @@ function nanofilter(server, port, k) {
             }
             parts.push('.r("' + f + '",' + filter + ')');
         }
-        if(group.type)
-            parts.push('.a("' + group.dimension + '",' + group.type + '(' + group.args.join(',') + '))');
+        if(group.print)
+            parts.push('.a("' + group.dimension + '",' + group.print() + ')');
         return parts.join('');
+    }
+
+    function create_group(dimension) {
+        var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null};
+        _groups[_id] = _anchor;
+
+        function arg_printer(name /* ... */) {
+            var args = Array.prototype.slice.call(arguments, 1);
+            return function() {
+                return name + '(' + args.map(JSON.stringify).join(',') + ')';
+            };
+        }
+        return {
+            // native interface
+            mt_interval_sequence: function(start, binwid, len) { // ints
+                _anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
+                return this;
+            },
+            dive: function(bins, depth) {
+                _anchor.print = arg_printer('dive', bins, depth);
+                return this;
+            },
+            // somewhat nicer interface
+            time: function(start, binwid, len) { // Date, ms, number
+                start = start ? start.getTime() : _start_time;
+                binwid = binwid || _resolution;
+                len = len || 10*365;
+                var startb = (start - _start_time)/_resolution,
+                    widb = binwid/_resolution;
+                this.mt_interval_sequence(startb, widb, len);
+                return this;
+            },
+            categorical: function() {
+                this.dive([], 1);
+                return this;
+            },
+            dispose: function() {
+                delete _groups[_id];
+                _anchor.values = null;
+                return this;
+            },
+            all: function() {
+                return _anchor.values;
+            }
+        };
     }
 
     var nf = {};
@@ -59,7 +105,7 @@ function nanofilter(server, port, k) {
                 return v;
             if(v instanceof Array)
                 return v.map(toValues);
-            return _fields[field].valnames[v];
+            return _xform[field].to(v);
         }
 
         return {
@@ -92,28 +138,7 @@ function nanofilter(server, port, k) {
                 return this;
             },
             group: function() {
-                var _id = _group_id++, _anchor = {id: _id, dimension: field, values: null};
-                _groups[_id] = _anchor;
-
-                function capture(name) {
-                    return function() {
-                        _anchor.type = name;
-                        _anchor.args = Array.prototype.slice.call(arguments, 0);
-                        return this;
-                    };
-                }
-                return {
-                    mt_interval_sequence: capture('mt_interval_sequence'),
-                    dive: capture('dive'),
-                    dispose: function() {
-                        delete _groups[_id];
-                        _anchor.values = null;
-                        return this;
-                    },
-                    all: function() {
-                        return _anchor.values;
-                    }
-                };
+                return create_group(field);
             }
         };
     };
@@ -134,6 +159,10 @@ function nanofilter(server, port, k) {
         expect('root', 'children');
     }
 
+    function key_ascending(a, b) { // adapted from d3.ascending
+        return a.key < b.key ? -1 : a.key > b.key ? 1 : a.key >= b.key ? 0 : NaN;
+    }
+
     nf.commit = function(k) {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
@@ -150,8 +179,12 @@ function nanofilter(server, port, k) {
                     group = _groups[id],
                     xform = _xform[group.dimension];
                 group.values = result.root.children.map(function(pv) {
-                    return {key: xform ? xform(pv.path[0]) : pv.path[0], value: pv.val};
-                });
+                    return {key: pv.path[0], value: pv.val};
+                })
+                    .sort(key_ascending)
+                    .map(function(kv) {
+                        return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
+                    });
             }
             if(!error && validate(result))
                 _data = result;
@@ -170,9 +203,32 @@ function nanofilter(server, port, k) {
                     var vn = [];
                     for(var vname in f.valnames)
                         vn[f.valnames[vname]] = vname;
-                    _xform[f.name] = function(v) {
-                        return vn[v];
+                    _xform[f.name] = {
+                        to: function(v) {
+                            return f.valnames[v];
+                        },
+                        fro: function(v) {
+                            return vn[v];
+                        }
                     };
+                }
+                else if(/^nc_dim_time_/.test(f.type)) {
+                    _xform[f.name] = {
+                        to: function(v) {
+                            return Math.round((v.getTime() - _start_time)/_resolution);
+                        },
+                        fro: function(v) {
+                            return new Date(_start_time + v * _resolution);
+                        }
+                    };
+                }
+            });
+            _schema.metadata.forEach(function(m) {
+                if(m.key === 'tbin') {
+                    var parts = m.value.split('_');
+                    _start_time = Date.parse(parts[0] + ' ' + parts[1]);
+                    if(/^[0-9]+s$/.test(parts[2]))
+                        _resolution = +parts[2].substr(0, parts[2].length-1) * 1000;
                 }
             });
             k(error, schema);
