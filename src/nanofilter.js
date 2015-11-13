@@ -168,7 +168,7 @@ function nanofilter(server, port, k) {
                     xform = _xform[group.dimension];
                 group.values = result.root.children.map(function(pv) {
                     return {key: xform ? xform.fro(pv.path[0]) : pv.path[0], value: pv.val};
-                });
+                }).sort(function(kv) { return kv.key; });
             }
             if(!error && validate(result))
                 _data = result;
