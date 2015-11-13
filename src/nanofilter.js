@@ -61,7 +61,7 @@ function nanofilter(server, port, k) {
             },
             // somewhat nicer interface
             time: function(start, binwid, len) { // Date, ms, number
-                start = start ? start.now() : _start_time;
+                start = start ? start.getTime() : _start_time;
                 binwid = binwid || _resolution;
                 len = len || 10*365;
                 var startb = (start - _start_time)/_resolution,
@@ -199,9 +199,7 @@ function nanofilter(server, port, k) {
                 else if(/^nc_dim_time_/.test(f.type)) {
                     _xform[f.name] = {
                         to: function(v) {
-                            // where in d3/dc does it get coerced to number?
-                            v = typeof v === 'number' ? v : v.now;
-                            return (v - _start_time)/_resolution;
+                            return Math.round((v.getTime() - _start_time)/_resolution);
                         },
                         fro: function(v) {
                             return new Date(_start_time + v * _resolution);
