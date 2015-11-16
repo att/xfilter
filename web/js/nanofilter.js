@@ -43,12 +43,12 @@ function nanofilter(server, port, k) {
             parts.push('.r("' + f + '",' + filter + ')');
         }
         if(group.print)
-            parts.push('.a("' + group.dimension + '",' + group.print() + ')');
+            parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
         return parts.join('');
     }
 
     function create_group(dimension) {
-        var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null};
+        var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
 
         function arg_printer(name /* ... */) {
@@ -61,10 +61,12 @@ function nanofilter(server, port, k) {
             // native interface
             mt_interval_sequence: function(start, binwid, len) { // ints
                 _anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
+                _anchor.splitter = 'r';
                 return this;
             },
             dive: function(bins, depth) {
                 _anchor.print = arg_printer('dive', bins, depth);
+                _anchor.splitter = 'a';
                 return this;
             },
             // somewhat nicer interface
