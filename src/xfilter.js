@@ -1,12 +1,4 @@
-/*!
- *  nanofilter 0.0.1
- *  http://gordonwoodhull.github.io/nanofilter/
- *  Copyright (c) 2012-2013 AT&T Intellectual Property
- *
- *  Licensed under the Eclipse Public License
- *  https://github.com/gordonwoodhull/nanofilter/blob/master/LICENSE
- */
-function nanofilter(server, port, k) {
+function xfilter(server, port, k) {
     var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
     var _start_time, _resolution; // in ms (since epoch for start)
 
@@ -24,27 +16,6 @@ function nanofilter(server, port, k) {
             Q.defer(d3.json, query_url(q));
         });
         Q.await(k);
-    }
-
-    function build_query(group) {
-        var parts = ['count'];
-        for(var f in _filters) {
-            if(group && group.dimension === f)
-                continue;
-            var filter;
-            switch(_filters[f].type) {
-            case 'set':
-                filter = 'set(' + _filters[f].target.join(',') + ')';
-                break;
-            case 'interval':
-                filter = 'interval(' + _filters[f].target.join(',') + ')';
-                break;
-            }
-            parts.push('.r("' + f + '",' + filter + ')');
-        }
-        if(group.print)
-            parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
-        return parts.join('');
     }
 
     function create_group(dimension) {
@@ -94,9 +65,9 @@ function nanofilter(server, port, k) {
         };
     }
 
-    var nf = {};
+    var xf = {};
 
-    nf.dimension = function(field) {
+    xf.dimension = function(field) {
         if(!_schema)
             throw new Error('no schema');
         if(!_schema.fields.find(function(f) { return f.name === field; }))
@@ -177,10 +148,10 @@ function nanofilter(server, port, k) {
         }
     }
 
-    nf.commit = function(k) {
+    xf.commit = function(k) {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
-            qs.push(build_query(_groups[id]));
+            qs.push(build_query(_filters, _groups[id]));
         do_queries(qs, function(error) {
             if(error)
                 throw new Error(error);
@@ -252,7 +223,5 @@ function nanofilter(server, port, k) {
         }
     });
 
-    return nf;
+    return xf;
 }
-
-//# sourceMappingURL=nanofilter.js.map

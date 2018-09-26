@@ -14,7 +14,7 @@
     <script type="text/javascript" src="js/queue.js"></script>
     <script type="text/javascript" src="js/querystring.js"></script>
 
-    <script type="text/javascript" src="js/nanofilter.js"></script>
+    <script type="text/javascript" src="js/xfilter.js"></script>
   </head>
 
   <body>
@@ -83,7 +83,7 @@
           d3.select('body').append('p').text('Need server and port');
       }
       else {
-          var nf = nanofilter(qs.server, qs.port, function(error, result) {
+          var nf = xfilter(qs.server, qs.port, function(error, result) {
               if(error)
                   throw new Error(error);
 

@@ -1,9 +1,9 @@
 {
-  "name": "nanofilter",
+  "name": "xfilter",
   "version": "0.0.1",
   "license": "MIT",
   "copyright": "2015",
-  "description": "Nanocubes-Crossfilter bridge",
+  "description": "Arbitrary backend - crossfilter bridge",
   "keywords": [
     "visualization",
     "chart",
@@ -12,19 +12,20 @@
     "d3",
     "dc"
   ],
-  "homepage": "http://gordonwoodhull.github.io/nanofilter/",
-  "bugs": "https://github.com/gordonwoodhull/nanofilter/issues",
+  "homepage": "http://att.github.io/xfilter/",
+  "bugs": "https://github.com/att/xfilter/issues",
   "author": {
-    "name": "Gordon Woodhull"
+    "name": "Gordon Woodhull",
+    "email": "gordon@research.att.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gordonwoodhull/nanofilter.git"
+    "url": "https://github.com/att/xfilter.git"
   },
   "dependencies": {
-    "crossfilter": "1.x",
-    "d3": "3.x",
-    "dc": ">=2.0.0-beta.22"
+    "crossfilter2": "~1.4",
+    "d3": "5.x",
+    "dc": "3.x"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
@@ -43,12 +44,11 @@
     "load-grunt-tasks": "~3.2.0",
     "time-grunt": "~1.2.1"
   },
-  "npmName": "nanofilter",
+  "npmName": "xfilter",
   "npmFileMap": [
     {
       "basePath": "/",
-      "files": [
-      ]
+      "files": []
     }
   ]
 }
