@@ -1,5 +1,6 @@
 function xfilter(server, port, k) {
-    var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
+    var _engine;
+    var _schema, _fields, _xform, _filters = {}, _groups = {}, _data, _group_id = 17;
     var _start_time, _resolution; // in ms (since epoch for start)
 
     function query_url(q) {
@@ -7,15 +8,13 @@ function xfilter(server, port, k) {
     }
 
     function do_query(q, k) {
-        d3.json(query_url(q), k);
+        return d3.json(query_url(q));
     }
 
     function do_queries(qs, k) {
-        var Q = queue();
-        qs.forEach(function(q) {
-            Q.defer(d3.json, query_url(q));
-        });
-        Q.await(k);
+        return Promise.all(qs.map(function(q) {
+            return d3.json(query_url(q));
+        }));
     }
 
     function create_group(dimension) {
@@ -136,30 +135,16 @@ function xfilter(server, port, k) {
         return a.key < b.key ? -1 : a.key > b.key ? 1 : a.key >= b.key ? 0 : NaN;
     }
 
-    function ms_mult(suffix) {
-        var mult = 1;
-        switch(suffix) {
-        case 'w': mult *= 7;
-        case 'd': mult *= 24;
-        case 'h': mult *= 60;
-        case 'm': mult *= 60;
-        case 's': return mult*1000;
-        default: return NaN;
-        }
-    }
-
     xf.commit = function(k) {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
-            qs.push(build_query(_filters, _groups[id]));
-        do_queries(qs, function(error) {
-            if(error)
-                throw new Error(error);
-            if(arguments.length !== qs.length + 1)
-                throw new Error('unexpected number of arguments ' + arguments.length);
+            qs.push(xf.engine().build_query(_filters, _groups[id]));
+        do_queries(qs).then(function(results) {
+            if(results.length !== qs.length + 1)
+                throw new Error('unexpected number of results ' + results.length);
 
-            for(var i = 1; i < arguments.length; ++i) {
-                var result = arguments[i],
+            for(var i = 1; i < results.length; ++i) {
+                var result = results[i],
                     id = ids[i-1],
                     group = _groups[id],
                     xform = _xform[group.dimension];
@@ -171,57 +156,24 @@ function xfilter(server, port, k) {
                         return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
                     });
             }
-            if(!error && validate(result))
+            if(validate(result))
                 _data = result;
-            k(error, result);
+            return results;
         });
     };
 
-    do_query('schema', function(error, schema) {
-        if(error)
-            k(error, schema);
-        else {
-            _schema = schema;
-            _schema.fields.forEach(function(f) {
-                _fields[f.name] = f;
-                if(/^nc_dim_cat_/.test(f.type)) {
-                    var vn = [];
-                    for(var vname in f.valnames)
-                        vn[f.valnames[vname]] = vname;
-                    _xform[f.name] = {
-                        to: function(v) {
-                            return f.valnames[v];
-                        },
-                        fro: function(v) {
-                            return vn[v];
-                        }
-                    };
-                }
-                else if(/^nc_dim_time_/.test(f.type)) {
-                    _xform[f.name] = {
-                        to: function(v) {
-                            return Math.round((v.getTime() - _start_time)/_resolution);
-                        },
-                        fro: function(v) {
-                            return new Date(_start_time + v * _resolution);
-                        }
-                    };
-                }
-            });
-            _schema.metadata.forEach(function(m) {
-                if(m.key === 'tbin') {
-                    var parts = m.value.split('_');
-                    _start_time = Date.parse(parts[0] + ' ' + parts[1]);
-                    var match;
-                    if((match = /^([0-9]+)([a-z]+)$/.exec(parts[2]))) {
-                        var mult = ms_mult(match[2]);
-                        _resolution = +match[1] * mult;
-                    }
-                }
-            });
-            k(error, schema);
-        }
-    });
+    xf.engine = function(_) {
+        if(!arguments.length)
+            return _engine;
+        _engine = _;
+        return xf;
+    };
+
+    xf.start = function() {
+        xf.engine().fetch_schema(do_query).then(function(result) {
+            {_schema, _fields, _xform} = result;
+        });
+    };
 
     return xf;
 }
