@@ -130,15 +130,15 @@ module.exports = function (grunt) {
                     {
                         expand: true,
                         flatten: true,
+                        nonull: true,
                         src: [
                             '<%= conf.pkg.name %>.js',
                             '<%= conf.pkg.name %>.js.map',
                             '<%= conf.pkg.name %>.min.js',
                             '<%= conf.pkg.name %>.min.js.map',
-                            'node_modules/d3/d3.js',
-                            'node_modules/crossfilter/crossfilter.js',
-                            'node_modules/dc/dc.js',
-                            'test/env-data.js'
+                            'node_modules/d3/dist/d3.js',
+                            'node_modules/crossfilter2/crossfilter.js',
+                            'node_modules/dc/dc.js'
                         ],
                         dest: '<%= conf.web %>/js/'
                     }
@@ -190,5 +190,6 @@ module.exports = function (grunt) {
 module.exports.jsFiles = [
     'src/banner.js',   // NOTE: keep this first
     'src/xfilter.js',
+    'src/nanocube-queries.js',
     'src/footer.js'  // NOTE: keep this last
 ];

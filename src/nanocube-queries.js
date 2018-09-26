@@ -33,7 +33,7 @@ function nanocube_queries() {
             return parts.join('');
         },
         fetch_schema: function(do_query) {
-            do_query('schema').then(function(schema) {
+            return do_query('schema').then(function(schema) {
                 var fields = {}, xform = {};
                 schema.fields.forEach(function(f) {
                     fields[f.name] = f;

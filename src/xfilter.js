@@ -170,8 +170,9 @@ function xfilter(server) {
     };
 
     xf.start = function() {
-        xf.engine().fetch_schema(do_query).then(function(result) {
-            {_schema, _fields, _xform} = result;
+        return xf.engine().fetch_schema(do_query).then(function(result) {
+            // is there a more idiomatic es6 way to do this?
+            [_schema, _fields, _xform] = ['schema', 'fields', 'xform'].map(k => result[k]);
         });
     };
 

@@ -59,56 +59,56 @@
           d3.select('body').append('p').text('Need ?server');
       }
       else {
-          var nf = xfilter(qs.server, qs.port, function(error, result) {
-              if(error)
-                  throw new Error(error);
+          var nf = xfilter(qs.server)
+              .engine(nanocube_queries());
+          nf.start()
+              .then(function(result) {
+                  function commitHandler(isRender, k) {
+                      nf.commit(k);
+                  }
+                  var typesDim = nf.dimension('Primary_Type'),
+                      typesGroup = typesDim.group().categorical(),
+                      timesDim = nf.dimension('Date'),
+                      timesGroup = timesDim.group().time();
 
-              function commitHandler(isRender, k) {
-                  nf.commit(k);
-              }
-              var typesDim = nf.dimension('Primary_Type'),
-                  typesGroup = typesDim.group().categorical(),
-                  timesDim = nf.dimension('Date'),
-                  timesGroup = timesDim.group().time();
+                  timesChart
+                      .width(768)
+                      .height(480)
+                      .margins({left: 70, top: 5, right: 0, bottom: 20})
+                      .dimension(timesDim)
+                      .group(timesGroup)
+                      .x(d3.scaleTime())
+                      .xUnits(d3.timeDays)
+                      .elasticX(true).elasticY(true)
+                      .controlsUseVisibility(true)
+                      .commitHandler(commitHandler)
+                      .filterHandler(filterHandler);
 
-              timesChart
-                  .width(768)
-                  .height(480)
-                  .margins({left: 70, top: 5, right: 0, bottom: 20})
-                  .dimension(timesDim)
-                  .group(timesGroup)
-                  .x(d3.time.scale())
-                  .xUnits(d3.time.days)
-                  .elasticX(true).elasticY(true)
-                  .controlsUseVisibility(true)
-                  .commitHandler(commitHandler)
-                  .filterHandler(filterHandler);
+                  typesChart
+                      .width(768)
+                      .height(600)
+                      .x(d3.scaleOrdinal())
+                      .elasticY(true)
+                      .margins({left: 70, top: 5, right: 0, bottom: 200})
+                      .xUnits(dc.units.ordinal)
+                      .dimension(typesDim)
+                      .group(typesGroup)
+                      .controlsUseVisibility(true)
+                      .commitHandler(commitHandler)
+                      .filterHandler(filterHandler)
+                      .on('pretransition', function(chart) {
+                          // rotate labels - swear I did this in CSS once
+                          chart.selectAll('g.axis.x text')
+                              .style('text-anchor', 'start')
+                              .attr("dy", "-.4em")
+                              .attr("dx", ".75em")
+                              .attr('transform', 'rotate(90)');
+                      })
 
-              typesChart
-                  .width(768)
-                  .height(600)
-                  .x(d3.scale.ordinal())
-                  .elasticY(true)
-                  .margins({left: 70, top: 5, right: 0, bottom: 200})
-                  .xUnits(dc.units.ordinal)
-                  .dimension(typesDim)
-                  .group(typesGroup)
-                  .controlsUseVisibility(true)
-                  .commitHandler(commitHandler)
-                  .filterHandler(filterHandler)
-                  .on('pretransition', function(chart) {
-                      // rotate labels - swear I did this in CSS once
-                      chart.selectAll('g.axis.x text')
-                          .style('text-anchor', 'start')
-                          .attr("dy", "-.4em")
-                          .attr("dx", ".75em")
-                          .attr('transform', 'rotate(90)');
-                  })
+                  typesChart.renderGroup();
 
-              typesChart.renderGroup();
-
-          });
+              });
       }
-  </script>
+    </script>
   </body>
 </html>
