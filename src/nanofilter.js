@@ -1,9 +1,9 @@
-function nanofilter(server, port, k) {
+function nanofilter(server, k) {
     var _schema, _fields = {}, _xform = {}, _filters = {}, _groups = {}, _data, _group_id = 17;
     var _start_time, _resolution; // in ms (since epoch for start)
 
     function query_url(q) {
-        return 'http://' + server + ':' + port + '/' + q;
+        return server + '/' + q;
     }
 
     function do_query(q, k) {

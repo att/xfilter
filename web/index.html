@@ -55,11 +55,11 @@
       var timesChart = dc.lineChart("#times");
       var typesChart = dc.barChart("#types");
       var qs = querystring.parse();
-      if(!qs.server && !qs.port) {
-          d3.select('body').append('p').text('Need server and port');
+      if(!qs.server) {
+          d3.select('body').append('p').text('Need server');
       }
       else {
-          var nf = nanofilter(qs.server, qs.port, function(error, result) {
+          var nf = nanofilter(qs.server, function(error, result) {
               if(error)
                   throw new Error(error);
 
