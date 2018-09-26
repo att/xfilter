@@ -18,27 +18,6 @@ function nanofilter(server, port, k) {
         Q.await(k);
     }
 
-    function build_query(group) {
-        var parts = ['count'];
-        for(var f in _filters) {
-            if(group && group.dimension === f)
-                continue;
-            var filter;
-            switch(_filters[f].type) {
-            case 'set':
-                filter = 'set(' + _filters[f].target.join(',') + ')';
-                break;
-            case 'interval':
-                filter = 'interval(' + _filters[f].target.join(',') + ')';
-                break;
-            }
-            parts.push('.r("' + f + '",' + filter + ')');
-        }
-        if(group.print)
-            parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
-        return parts.join('');
-    }
-
     function create_group(dimension) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
