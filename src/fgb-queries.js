@@ -40,4 +40,4 @@ xfilter.fgb_queries = function() {
             });
         }
     };
-}
+};
