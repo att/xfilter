@@ -34,7 +34,8 @@ function xfilter(server) {
                 return _anchor.values;
             }
         };
-        xf.engine().augment_group && group = xf.engine().augment_group(group);
+        if(xf.engine().augment_group)
+            group = xf.engine().augment_group(group);
         return group;
     }
 
