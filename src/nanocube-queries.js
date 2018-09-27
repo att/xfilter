@@ -72,7 +72,7 @@ function nanocube_queries() {
                         }
                     }
                 });
-                return {schema, fields, xform};
+                return {fields, xform};
             });
         },
         augment_group: function(anchor, group) {

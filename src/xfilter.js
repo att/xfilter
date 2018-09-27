@@ -1,6 +1,6 @@
 function xfilter(server) {
     var _engine;
-    var _schema, _fields, _xform, _filters = {}, _groups = {}, _data, _group_id = 17;
+    var _fields, _xform, _filters = {}, _groups = {}, _data, _group_id = 17;
     var _start_time, _resolution; // in ms (since epoch for start)
 
     function query_url(q) {
@@ -39,9 +39,9 @@ function xfilter(server) {
     var xf = {};
 
     xf.dimension = function(field) {
-        if(!_schema)
-            throw new Error('no schema');
-        if(!_schema.fields.find(function(f) { return f.name === field; }))
+        if(!Object.keys(_fields).length)
+            throw new Error('no schema (not started)');
+        if(!_fields[field])
             throw new Error('field ' + field + ' not found in schema');
 
         function toValues(v) {
@@ -143,8 +143,7 @@ function xfilter(server) {
 
     xf.start = function() {
         return xf.engine().fetch_schema(do_query).then(function(result) {
-            // is there a more idiomatic es6 way to do this?
-            [_schema, _fields, _xform] = ['schema', 'fields', 'xform'].map(k => result[k]);
+            ({fields: _fields, xform: _xform} = result);
         });
     };
 
