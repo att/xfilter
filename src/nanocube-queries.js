@@ -82,7 +82,7 @@ xfilter.nanocube_queries = function() {
                     return name + '(' + args.map(JSON.stringify).join(',') + ')';
                 };
             }
-            return Object.assign(group, {
+            return Object.assign({}, group, {
                 dive: function(bins, depth) {
                     anchor.print = arg_printer('dive', bins, depth);
                     anchor.splitter = 'a';
@@ -101,8 +101,11 @@ xfilter.nanocube_queries = function() {
                     len = len || 10*365;
                     var startb = (start - _start_time)/_resolution,
                         widb = binwid/_resolution;
-                    this.mt_interval_sequence(startb, widb, len);
-                    return this;
+                    return this.mt_interval_sequence(startb, widb, len);
+                },
+                categorical: function() {
+                    group.categorical();
+                    return this.dive([], 1);
                 }
             });
         }

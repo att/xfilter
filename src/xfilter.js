@@ -22,7 +22,7 @@ function xfilter(server) {
         _groups[_id] = _anchor;
         var group = {
             categorical: function() {
-                this.dive([], 1);
+                // unclear how much engines will share impl
                 return this;
             },
             dispose: function() {
