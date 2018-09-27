@@ -7,16 +7,6 @@ function xfilter(server) {
         return server + '/' + q;
     }
 
-    function do_query(q) {
-        return d3.json(query_url(q));
-    }
-
-    function do_queries(qs) {
-        return Promise.all(qs.map(function(q) {
-            return d3.json(query_url(q));
-        }));
-    }
-
     function create_group(dimension) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
@@ -113,8 +103,8 @@ function xfilter(server) {
     xf.commit = function() {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
-            qs.push(xf.engine().build_query(_filters, _groups[id]));
-        return do_queries(qs).then(function(results) {
+            qs.push(xf.engine().do_query(query_url, _filters, _groups[id]));
+        return Promise.all(qs).then(function(results) {
             if(results.length !== qs.length)
                 throw new Error('unexpected number of results ' + results.length);
 
@@ -123,9 +113,8 @@ function xfilter(server) {
                     id = ids[i],
                     group = _groups[id],
                     xform = _xform[group.dimension];
-                group.values = result.root.children.map(function(pv) {
-                    return {key: pv.path[0], value: pv.val};
-                })
+                group.values = xf.engine()
+                    .unpack_result(result)
                     .sort(key_ascending)
                     .map(function(kv) {
                         return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
@@ -145,8 +134,9 @@ function xfilter(server) {
     };
 
     xf.start = function() {
-        return xf.engine().fetch_schema(do_query).then(function(result) {
+        return xf.engine().fetch_schema(query_url).then(function(result) {
             ({fields: _fields, xform: _xform} = result);
+            _xform = _xform || {};
         });
     };
 

@@ -12,7 +12,7 @@ xfilter.nanocube_queries = function() {
         }
     }
     return {
-        build_query: function(filters, group) {
+        do_query: function(query_url, filters, group) {
             var parts = ['count'];
             for(var f in filters) {
                 if(group && group.dimension === f)
@@ -30,10 +30,15 @@ xfilter.nanocube_queries = function() {
             }
             if(group.print)
                 parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
-            return parts.join('');
+            return d3.json(query_url(parts.join('')));
         },
-        fetch_schema: function(do_query) {
-            return do_query('schema').then(function(schema) {
+        unpack_result: function(result) {
+            return result.root.children.map(function(pv) {
+                return {key: pv.path[0], value: pv.val};
+            });
+        },
+        fetch_schema: function(query_url) {
+            return d3.json(query_url('schema')).then(function(schema) {
                 var fields = {}, xform = {};
                 schema.fields.forEach(function(f) {
                     fields[f.name] = f;
