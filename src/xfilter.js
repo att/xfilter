@@ -66,7 +66,7 @@ function xfilter(server) {
                 _filters[field] = {type: 'set', target: [val]};
                 return this;
             },
-            filterMultiple: function(vals) { // unique to nanocubes
+            filterMultiple: function(vals) { // not in ordinary crossfilter
                 vals = toValues(vals);
                 _filters[field] = {type: 'set', target: vals};
                 return this;
