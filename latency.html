@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>dc.js on nanocubes</title>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="css/dc.css"/>
+    <link rel="stylesheet" type="text/css" href="css/index.css"/>
+
+    <script type="text/javascript" src="js/d3.js"></script>
+    <script type="text/javascript" src="js/crossfilter.js"></script><!-- for sorting functions -->
+    <script type="text/javascript" src="js/dc.js"></script>
+
+    <script type="text/javascript" src="js/queue.js"></script>
+    <script type="text/javascript" src="js/querystring.js"></script>
+
+    <script type="text/javascript" src="js/xfilter.js"></script>
+  </head>
+
+  <body>
+    <h3>dc.js on nanocubes</h3>
+
+    <p><div id='time'>
+      <div>
+        <b>Samples by Time</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:timeChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div></p>
+
+    <p><div id='latency'>
+      <div>
+        <b>Samples by Latency</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:latencyChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div> </p>
+
+    <p><div id='flow'>
+      <div>
+        <b>Samples by Flow</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:flowChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div></p>
+
+    <p><div id='volume'>
+      <div>
+        <b>Samples by Volume</b>
+        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+        <a class="reset" style="visibility: hidden" href="javascript:volumeChart.filter(null).redrawGroup()">reset</a>
+      </div>
+    </div></p>
+
+
+    <script type="text/javascript">
+      // define our own filter handler to avoid the dreaded filterFunction
+      var filterHandler = function (dimension, filters) {
+          if (filters.length === 0) {
+              dimension.filter(null);
+          } else if (filters.length === 1 && !filters[0].isFiltered) {
+              // single value and not a function-based filter
+              dimension.filterExact(filters[0]);
+          } else if (filters.length === 1 && filters[0].filterType === 'RangedFilter') {
+              // single range-based filter
+              dimension.filterRange(filters[0]);
+          } else {
+              // this is the case changed from core dc.js
+              // filterMultiple does not exist in crossfilter
+              dimension.filterMultiple(filters);
+          }
+          return filters;
+      };
+
+      var timeChart    = dc.lineChart("#time");
+      var latencyChart = dc.barChart("#latency");
+      var flowChart    = dc.barChart("#flow");
+      var volumeChart  = dc.barChart("#volume");
+
+      var qs = querystring.parse();
+
+      if(!qs.server && !qs.port) {
+          d3.select('body').append('p').text('Need server and port');
+      }
+      else {
+          var nf = xfilter(qs.server, qs.port, function(error, result) {
+              if(error)
+                  throw new Error(error);
+
+              function commitHandler(isRender, k) {
+                  nf.commit(k);
+              }
+
+              var timeDim      = nf.dimension('time');
+              var timeGroup    = timeDim.group().time(0,0,3000);
+              var latencyDim   = nf.dimension('latency');
+              var latencyGroup = latencyDim.group().categorical();
+              var flowDim      = nf.dimension('flows');
+              var flowGroup    = flowDim.group().categorical();
+              var volumeDim    = nf.dimension('volume');
+              var volumeGroup  = volumeDim.group().categorical();
+
+              timeChart
+                  .width(768)
+                  .height(480)
+                  .margins({left: 70, top: 5, right: 0, bottom: 20})
+                  .dimension(timeDim)
+                  .group(timeGroup)
+                  .x(d3.time.scale())
+                  .xUnits(d3.time.days)
+                  .elasticX(true).elasticY(true)
+                  .controlsUseVisibility(true)
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler);
+
+              latencyChart
+                  .width(768)
+                  .height(600)
+                  .x(d3.scale.ordinal())
+                  .elasticY(true)
+                  .margins({left: 70, top: 5, right: 0, bottom: 200})
+                  .xUnits(dc.units.ordinal)
+                  .dimension(latencyDim)
+                  .group(latencyGroup)
+                  .controlsUseVisibility(true)
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler)
+                  .on('pretransition', function(chart) {
+                      // rotate labels - swear I did this in CSS once
+                      chart.selectAll('g.axis.x text')
+                          .style('text-anchor', 'start')
+                          .attr("dy", "-.4em")
+                          .attr("dx", ".75em")
+                          .attr('transform', 'rotate(90)');
+                  })
+
+              flowChart
+                  .width(768)
+                  .height(600)
+                  .x(d3.scale.ordinal())
+                  .elasticY(true)
+                  .margins({left: 70, top: 5, right: 0, bottom: 200})
+                  .xUnits(dc.units.ordinal)
+                  .dimension(flowDim)
+                  .group(flowGroup)
+                  .controlsUseVisibility(true)
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler)
+                  .on('pretransition', function(chart) {
+                      // rotate labels - swear I did this in CSS once
+                      chart.selectAll('g.axis.x text')
+                          .style('text-anchor', 'start')
+                          .attr("dy", "-.4em")
+                          .attr("dx", ".75em")
+                          .attr('transform', 'rotate(90)');
+                  })
+
+              volumeChart
+                  .width(768)
+                  .height(600)
+                  .x(d3.scale.ordinal())
+                  .elasticY(true)
+                  .margins({left: 70, top: 5, right: 0, bottom: 200})
+                  .xUnits(dc.units.ordinal)
+                  .dimension(volumeDim)
+                  .group(volumeGroup)
+                  .controlsUseVisibility(true)
+                  .commitHandler(commitHandler)
+                  .filterHandler(filterHandler)
+                  .on('pretransition', function(chart) {
+                      // rotate labels - swear I did this in CSS once
+                      chart.selectAll('g.axis.x text')
+                          .style('text-anchor', 'start')
+                          .attr("dy", "-.4em")
+                          .attr("dx", ".75em")
+                          .attr('transform', 'rotate(90)');
+                  })
+
+
+              latencyChart.renderGroup();
+
+              // flowChart.renderGroup();
+              // volumeChart.renderGroup();
+
+          });
+      }
+  </script>
+  </body>
+</html>
