@@ -189,6 +189,7 @@ module.exports = function (grunt) {
 
 module.exports.jsFiles = [
     'src/banner.js',   // NOTE: keep this first
+    'src/core.js',
     'src/xfilter.js',
     'src/nanocube-queries.js',
     'src/footer.js'  // NOTE: keep this last

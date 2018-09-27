@@ -1,4 +1,4 @@
-function nanocube_queries() {
+xfilter.nanocube_queries = function() {
     var _start_time, _resolution;
     function ms_mult(suffix) {
         var mult = 1;
@@ -107,4 +107,4 @@ function nanocube_queries() {
             });
         }
     };
-}
+};
