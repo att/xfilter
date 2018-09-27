@@ -1,8 +1,8 @@
 {
   "name": "xfilter",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
-  "copyright": "2015",
+  "copyright": "2018",
   "description": "Arbitrary backend - crossfilter bridge",
   "keywords": [
     "visualization",
