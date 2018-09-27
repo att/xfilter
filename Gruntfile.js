@@ -124,7 +124,10 @@ module.exports = function (grunt) {
                     {
                         expand: true,
                         flatten: true,
-                        src: ['<%= conf.pkg.name %>.css', '<%= conf.pkg.name %>.min.css'],
+                        src: [
+                            '<%= conf.pkg.name %>.css', '<%= conf.pkg.name %>.min.css',
+                            'node_modules/bootstrap/dist/css/bootstrap.css'
+                        ],
                         dest: '<%= conf.web %>/css/'
                     },
                     {
