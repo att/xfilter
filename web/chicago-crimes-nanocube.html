@@ -60,7 +60,7 @@
       }
       else {
           var nf = xfilter(qs.server)
-              .engine(nanocube_queries());
+              .engine(xfilter.nanocube_queries());
           nf.start()
               .then(function(result) {
                   function commitHandler(isRender, k) {

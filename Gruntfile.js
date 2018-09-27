@@ -174,7 +174,7 @@ module.exports = function (grunt) {
 
     // task aliases
     grunt.registerTask('build', ['concat', 'uglify', 'cssmin']);
-    grunt.registerTask('docs', ['build', 'copy', 'jsdoc2md']);
+    grunt.registerTask('docs', ['build', 'copy']);
     grunt.registerTask('web', ['docs', 'gh-pages']);
     grunt.registerTask('server', ['build', 'connect:server', 'watch:scripts']);
     grunt.registerTask('test', ['build', 'jasmine:specs']);
@@ -184,11 +184,12 @@ module.exports = function (grunt) {
     grunt.registerTask('ci-pull', ['test', 'jasmine:specs:build', 'connect:server']);
     grunt.registerTask('lint', ['jshint']);
     grunt.registerTask('default', ['build', 'shell:hooks']);
-    grunt.registerTask('jsdoc', ['build', 'jsdoc2md', 'watch:jsdoc2md']);
+    //grunt.registerTask('jsdoc', ['build', 'jsdoc2md', 'watch:jsdoc2md']);
 };
 
 module.exports.jsFiles = [
     'src/banner.js',   // NOTE: keep this first
+    'src/core.js',
     'src/xfilter.js',
     'src/nanocube-queries.js',
     'src/footer.js'  // NOTE: keep this last
