@@ -192,5 +192,7 @@ module.exports.jsFiles = [
     'src/core.js',
     'src/xfilter.js',
     'src/nanocube-queries.js',
+    'src/fgb-queries.js',
+    'src/filter-handler.js',
     'src/footer.js'  // NOTE: keep this last
 ];
