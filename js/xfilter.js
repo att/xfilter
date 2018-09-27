@@ -1,5 +1,5 @@
 /*!
- *  xfilter 0.1.0
+ *  xfilter 0.2.1
  *  http://att.github.io/xfilter/
  *  Copyright (c) 2012-2013 AT&T Intellectual Property
  *
@@ -9,7 +9,7 @@
 (function() { function _xfilter() {
 'use strict';
 
-xfilter.version = '0.1.0';
+xfilter.version = '0.2.1';
 
 
 function xfilter(server) {
@@ -21,22 +21,12 @@ function xfilter(server) {
         return server + '/' + q;
     }
 
-    function do_query(q) {
-        return d3.json(query_url(q));
-    }
-
-    function do_queries(qs) {
-        return Promise.all(qs.map(function(q) {
-            return d3.json(query_url(q));
-        }));
-    }
-
     function create_group(dimension) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
         var group = {
             categorical: function() {
-                this.dive([], 1);
+                // unclear how much engines will share impl
                 return this;
             },
             dispose: function() {
@@ -127,8 +117,8 @@ function xfilter(server) {
     xf.commit = function() {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
-            qs.push(xf.engine().build_query(_filters, _groups[id]));
-        return do_queries(qs).then(function(results) {
+            qs.push(xf.engine().do_query(query_url, _filters, _groups[id]));
+        return Promise.all(qs).then(function(results) {
             if(results.length !== qs.length)
                 throw new Error('unexpected number of results ' + results.length);
 
@@ -137,9 +127,8 @@ function xfilter(server) {
                     id = ids[i],
                     group = _groups[id],
                     xform = _xform[group.dimension];
-                group.values = result.root.children.map(function(pv) {
-                    return {key: pv.path[0], value: pv.val};
-                })
+                group.values = xf.engine()
+                    .unpack_result(result)
                     .sort(key_ascending)
                     .map(function(kv) {
                         return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
@@ -159,8 +148,9 @@ function xfilter(server) {
     };
 
     xf.start = function() {
-        return xf.engine().fetch_schema(do_query).then(function(result) {
+        return xf.engine().fetch_schema(query_url).then(function(result) {
             ({fields: _fields, xform: _xform} = result);
+            _xform = _xform || {};
         });
     };
 
@@ -181,7 +171,7 @@ xfilter.nanocube_queries = function() {
         }
     }
     return {
-        build_query: function(filters, group) {
+        do_query: function(query_url, filters, group) {
             var parts = ['count'];
             for(var f in filters) {
                 if(group && group.dimension === f)
@@ -199,10 +189,15 @@ xfilter.nanocube_queries = function() {
             }
             if(group.print)
                 parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
-            return parts.join('');
+            return d3.json(query_url(parts.join('')));
         },
-        fetch_schema: function(do_query) {
-            return do_query('schema').then(function(schema) {
+        unpack_result: function(result) {
+            return result.root.children.map(function(pv) {
+                return {key: pv.path[0], value: pv.val};
+            });
+        },
+        fetch_schema: function(query_url) {
+            return d3.json(query_url('schema')).then(function(schema) {
                 var fields = {}, xform = {};
                 schema.fields.forEach(function(f) {
                     fields[f.name] = f;
@@ -251,7 +246,7 @@ xfilter.nanocube_queries = function() {
                     return name + '(' + args.map(JSON.stringify).join(',') + ')';
                 };
             }
-            return Object.assign(group, {
+            return Object.assign({}, group, {
                 dive: function(bins, depth) {
                     anchor.print = arg_printer('dive', bins, depth);
                     anchor.splitter = 'a';
@@ -270,13 +265,79 @@ xfilter.nanocube_queries = function() {
                     len = len || 10*365;
                     var startb = (start - _start_time)/_resolution,
                         widb = binwid/_resolution;
-                    this.mt_interval_sequence(startb, widb, len);
-                    return this;
+                    return this.mt_interval_sequence(startb, widb, len);
+                },
+                categorical: function() {
+                    group.categorical();
+                    return this.dive([], 1);
                 }
             });
         }
     };
 };
+
+xfilter.fgb_queries = function() {
+    return {
+        do_query: function(query_url, filters, group) {
+            var query = {
+                filter: {},
+                groupby: [group.dimension]
+            };
+            for(var f in filters) {
+                if(group && group.dimension === f)
+                    continue;
+                if(filters[f].type !== 'set')
+                    throw new Error("don't know how to handle filter type " + filters[f].type);
+                query.filter[f] = filters[f].target;
+            }
+            return d3.json(query_url('query'), {
+                method: 'POST',
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                },
+                body: JSON.stringify(query)
+            });
+        },
+        unpack_result: function(result) {
+            return result.map(function(pair) {
+                return {key: pair[0], value: pair[1]};
+            });
+        },
+        fetch_schema: function(query_url) {
+            return d3.text(query_url('')).then(function(s) {
+                var i = s.indexOf(' ');
+                var count = +s.slice(0, i),
+                    columns = JSON.parse(s.slice(i+1).replace(/'/g, '"'));
+                return {
+                    fields: columns.reduce(function(p, v) {
+                        p[v] = true;
+                        return p;
+                    }, {}),
+                    xform: {}
+                };
+            });
+        }
+    };
+}
+
+// define our own filter handler to avoid the dreaded filterFunction
+xfilter.filter_handler = function (dimension, filters) {
+    if (filters.length === 0) {
+        dimension.filter(null);
+    } else if (filters.length === 1 && !filters[0].isFiltered) {
+        // single value and not a function-based filter
+        dimension.filterExact(filters[0]);
+    } else if (filters.length === 1 && filters[0].filterType === 'RangedFilter') {
+        // single range-based filter
+        dimension.filterRange(filters[0]);
+    } else {
+        // this is the case changed from core dc.js
+        // filterMultiple does not exist in crossfilter
+        dimension.filterMultiple(filters);
+    }
+    return filters;
+};
+
 
 return xfilter;
 }

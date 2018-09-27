@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>dc.js on nanocubes</title>
+    <title>dc.js on nanocubes: Chicago Crimes</title>
     <meta charset="UTF-8">
 
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
     <link rel="stylesheet" type="text/css" href="css/dc.css"/>
     <link rel="stylesheet" type="text/css" href="css/index.css"/>
 
@@ -18,40 +19,24 @@
   </head>
 
   <body>
-    <h3>dc.js on nanocubes</h3>
-    <div id='times'>
-      <div>
-        <b>Crimes by Date</b>
-        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
-        <a class="reset" style="visibility: hidden" href="javascript:timesChart.filter(null).redrawGroup()">reset</a>
+    <div class="container">
+      <h3>dc.js on nanocubes: Chicago Crimes</h3>
+      <div id='times'>
+        <div>
+          <b>Crimes by Date</b>
+          <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+          <a class="reset" style="visibility: hidden" href="javascript:timesChart.filter(null).redrawGroup()">reset</a>
+        </div>
       </div>
-    </div>
-    <div id='types'>
-      <div>
-        <b>Crimes by Type</b>
-        <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
-        <a class="reset" style="visibility: hidden" href="javascript:typesChart.filter(null).redrawGroup()">reset</a>
+      <div id='types'>
+        <div>
+          <b>Crimes by Type</b>
+          <span class="reset" style="visibility: hidden">Filter: <span class="filter"></span></span>&nbsp;
+          <a class="reset" style="visibility: hidden" href="javascript:typesChart.filter(null).redrawGroup()">reset</a>
+        </div>
       </div>
     </div>
     <script type="text/javascript">
-      // define our own filter handler to avoid the dreaded filterFunction
-      var filterHandler = function (dimension, filters) {
-          if (filters.length === 0) {
-              dimension.filter(null);
-          } else if (filters.length === 1 && !filters[0].isFiltered) {
-              // single value and not a function-based filter
-              dimension.filterExact(filters[0]);
-          } else if (filters.length === 1 && filters[0].filterType === 'RangedFilter') {
-              // single range-based filter
-              dimension.filterRange(filters[0]);
-          } else {
-              // this is the case changed from core dc.js
-              // filterMultiple does not exist in crossfilter
-              dimension.filterMultiple(filters);
-          }
-          return filters;
-      };
-
       var timesChart = dc.lineChart("#times");
       var typesChart = dc.barChart("#types");
       var qs = querystring.parse();
@@ -84,7 +69,7 @@
                       .elasticX(true).elasticY(true)
                       .controlsUseVisibility(true)
                       .commitHandler(commitHandler)
-                      .filterHandler(filterHandler);
+                      .filterHandler(xfilter.filter_handler);
 
                   typesChart
                       .width(768)
@@ -97,7 +82,7 @@
                       .group(typesGroup)
                       .controlsUseVisibility(true)
                       .commitHandler(commitHandler)
-                      .filterHandler(filterHandler)
+                      .filterHandler(xfilter.filter_handler)
                       .on('pretransition', function(chart) {
                           // rotate labels - swear I did this in CSS once
                           chart.selectAll('g.axis.x text')
