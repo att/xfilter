@@ -7,11 +7,11 @@ function xfilter(server) {
         return server + '/' + q;
     }
 
-    function do_query(q, k) {
+    function do_query(q) {
         return d3.json(query_url(q));
     }
 
-    function do_queries(qs, k) {
+    function do_queries(qs) {
         return Promise.all(qs.map(function(q) {
             return d3.json(query_url(q));
         }));
@@ -20,35 +20,7 @@ function xfilter(server) {
     function create_group(dimension) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
-
-        function arg_printer(name /* ... */) {
-            var args = Array.prototype.slice.call(arguments, 1);
-            return function() {
-                return name + '(' + args.map(JSON.stringify).join(',') + ')';
-            };
-        }
-        return {
-            // native interface
-            mt_interval_sequence: function(start, binwid, len) { // ints
-                _anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
-                _anchor.splitter = 'r';
-                return this;
-            },
-            dive: function(bins, depth) {
-                _anchor.print = arg_printer('dive', bins, depth);
-                _anchor.splitter = 'a';
-                return this;
-            },
-            // somewhat nicer interface
-            time: function(start, binwid, len) { // Date, ms, number
-                start = start ? start.getTime() : _start_time;
-                binwid = binwid || _resolution;
-                len = len || 10*365;
-                var startb = (start - _start_time)/_resolution,
-                    widb = binwid/_resolution;
-                this.mt_interval_sequence(startb, widb, len);
-                return this;
-            },
+        return xf.engine().augment_group(_anchor, {
             categorical: function() {
                 this.dive([], 1);
                 return this;
@@ -61,7 +33,7 @@ function xfilter(server) {
             all: function() {
                 return _anchor.values;
             }
-        };
+        });
     }
 
     var xf = {};
@@ -135,17 +107,17 @@ function xfilter(server) {
         return a.key < b.key ? -1 : a.key > b.key ? 1 : a.key >= b.key ? 0 : NaN;
     }
 
-    xf.commit = function(k) {
+    xf.commit = function() {
         var ids = Object.keys(_groups), qs = [];
         for(var id in _groups)
             qs.push(xf.engine().build_query(_filters, _groups[id]));
-        do_queries(qs).then(function(results) {
-            if(results.length !== qs.length + 1)
+        return do_queries(qs).then(function(results) {
+            if(results.length !== qs.length)
                 throw new Error('unexpected number of results ' + results.length);
 
-            for(var i = 1; i < results.length; ++i) {
+            for(var i = 0; i < results.length; ++i) {
                 var result = results[i],
-                    id = ids[i-1],
+                    id = ids[i],
                     group = _groups[id],
                     xform = _xform[group.dimension];
                 group.values = result.root.children.map(function(pv) {

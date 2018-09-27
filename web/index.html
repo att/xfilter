@@ -64,7 +64,9 @@
           nf.start()
               .then(function(result) {
                   function commitHandler(isRender, k) {
-                      nf.commit(k);
+                      nf.commit().then(function() {
+                          k();
+                      });
                   }
                   var typesDim = nf.dimension('Primary_Type'),
                       typesGroup = typesDim.group().categorical(),

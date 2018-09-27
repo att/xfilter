@@ -46,7 +46,7 @@ function nanocube_queries() {
                                 return f.valnames[v];
                             },
                             fro: function(v) {
-                                return vn[v];
+                                return vn[v] || 'foo';
                             }
                         };
                     }
@@ -73,6 +73,37 @@ function nanocube_queries() {
                     }
                 });
                 return {schema, fields, xform};
+            });
+        },
+        augment_group: function(anchor, group) {
+            function arg_printer(name /* ... */) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                return function() {
+                    return name + '(' + args.map(JSON.stringify).join(',') + ')';
+                };
+            }
+            return Object.assign(group, {
+                dive: function(bins, depth) {
+                    anchor.print = arg_printer('dive', bins, depth);
+                    anchor.splitter = 'a';
+                    return this;
+                },
+                // native interface
+                mt_interval_sequence: function(start, binwid, len) { // ints
+                    anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
+                    anchor.splitter = 'r';
+                    return this;
+                },
+                // somewhat nicer interface
+                time: function(start, binwid, len) { // Date, ms, number
+                    start = start ? start.getTime() : _start_time;
+                    binwid = binwid || _resolution;
+                    len = len || 10*365;
+                    var startb = (start - _start_time)/_resolution,
+                        widb = binwid/_resolution;
+                    this.mt_interval_sequence(startb, widb, len);
+                    return this;
+                }
             });
         }
     };
