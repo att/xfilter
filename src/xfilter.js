@@ -20,7 +20,7 @@ function xfilter(server) {
     function create_group(dimension) {
         var _id = _group_id++, _anchor = {id: _id, dimension: dimension, values: null, splitter: 'a'};
         _groups[_id] = _anchor;
-        return xf.engine().augment_group(_anchor, {
+        var group = {
             categorical: function() {
                 this.dive([], 1);
                 return this;
@@ -33,7 +33,9 @@ function xfilter(server) {
             all: function() {
                 return _anchor.values;
             }
-        });
+        };
+        xf.engine().augment_group && group = xf.engine().augment_group(group);
+        return group;
     }
 
     var xf = {};
