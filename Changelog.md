@@ -1,3 +1,5 @@
+# 0.2.2
+* fix development dependencies that github said were vulnerabilities (not that they would affect users)
 # 0.2.1
  * add fgb (filter & groupby) example engine
 
