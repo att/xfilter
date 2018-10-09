@@ -1,5 +1,5 @@
 /*!
- *  xfilter 0.2.1
+ *  xfilter 0.2.2
  *  http://att.github.io/xfilter/
  *  Copyright (c) 2012-2013 AT&T Intellectual Property
  *
@@ -9,7 +9,7 @@
 (function() { function _xfilter() {
 'use strict';
 
-xfilter.version = '0.2.1';
+xfilter.version = '0.2.2';
 
 
 function xfilter(server) {
@@ -318,7 +318,7 @@ xfilter.fgb_queries = function() {
             });
         }
     };
-}
+};
 
 // define our own filter handler to avoid the dreaded filterFunction
 xfilter.filter_handler = function (dimension, filters) {
