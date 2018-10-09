@@ -7,6 +7,22 @@ Currently the query engine supported is Nanocubes (this library was originally c
 use `xf.engine(xfilter.nanocube_queries)` to connect with a Nanocubes server
 ([demo](http://att.github.io/xfilter/chicago-crimes-nanocube.html?server=http://nanocubes.net/nanocube/20)).
 
-The intent is that this library can be generalized to support any query engine. Another example
-engine should be available shortly.
+Another example engine `xfilter.fgb_queries()` assumes the server takes queries that look like
+
+```js
+{
+    "filter": {
+        "column": [
+            "val1",
+            "val2"
+        ]
+    },
+    "groupby": [
+        "column2"
+    ]
+}
+```
+
+The intent is that this library can be generalized to support any query engine.
+
 
