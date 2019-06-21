@@ -1,5 +1,5 @@
 /*!
- *  xfilter 0.2.2
+ *  xfilter 0.2.3
  *  http://att.github.io/xfilter/
  *  Copyright (c) 2012-2013 AT&T Intellectual Property
  *
@@ -9,7 +9,7 @@
 (function() { function _xfilter() {
 'use strict';
 
-xfilter.version = '0.2.2';
+xfilter.version = '0.2.3';
 
 
 function xfilter(server) {
@@ -131,7 +131,7 @@ function xfilter(server) {
                     .unpack_result(result)
                     .sort(key_ascending)
                     .map(function(kv) {
-                        return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
+                        return {key: xform ? xform.fro(kv.key, group.state) : kv.key, value: kv.value};
                     });
             }
             if(validate(result))
@@ -187,8 +187,8 @@ xfilter.nanocube_queries = function() {
                 }
                 parts.push('.r("' + f + '",' + filter + ')');
             }
-            if(group.print)
-                parts.push('.' + group.splitter + '("' + group.dimension + '",' + group.print() + ')');
+            if(group.state)
+                parts.push('.' + group.state.splitter + '("' + group.dimension + '",' + group.state.print() + ')');
             return d3.json(query_url(parts.join('')));
         },
         unpack_result: function(result) {
@@ -219,8 +219,8 @@ xfilter.nanocube_queries = function() {
                             to: function(v) {
                                 return Math.round((v.getTime() - _start_time)/_resolution);
                             },
-                            fro: function(v) {
-                                return new Date(_start_time + v * _resolution);
+                            fro: function(v, state) {
+                                return new Date(state.start*_resolution + _start_time + v * state.binwid*_resolution);
                             }
                         };
                     }
@@ -246,16 +246,31 @@ xfilter.nanocube_queries = function() {
                     return name + '(' + args.map(JSON.stringify).join(',') + ')';
                 };
             }
+            function dive_state(bins, depth) {
+                return {
+                    bins: bins,
+                    depth: depth,
+                    splitter: 'a',
+                    print: arg_printer('dive', bins, depth)
+                };
+            }
+            function time_state(start, binwid, len) {
+                return {
+                    start: start,
+                    binwid: binwid,
+                    len: len,
+                    splitter: 'r',
+                    print: arg_printer('mt_interval_sequence', start, binwid, len)
+                };
+            }
             return Object.assign({}, group, {
                 dive: function(bins, depth) {
-                    anchor.print = arg_printer('dive', bins, depth);
-                    anchor.splitter = 'a';
+                    anchor.state = dive_state(bins, depth);
                     return this;
                 },
                 // native interface
                 mt_interval_sequence: function(start, binwid, len) { // ints
-                    anchor.print = arg_printer('mt_interval_sequence', start, binwid, len);
-                    anchor.splitter = 'r';
+                    anchor.state = time_state(start, binwid, len);
                     return this;
                 },
                 // somewhat nicer interface
