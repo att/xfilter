@@ -1,5 +1,6 @@
 # 0.2.3
 * correctly save query information in nanocubes queries to produce correct dates on output
+* update dependencies for a clean audit
 
 # 0.2.2
 * fix development dependencies that github said were vulnerabilities (not that they would affect users)
