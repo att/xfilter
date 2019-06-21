@@ -35,13 +35,23 @@
           <a class="reset" style="visibility: hidden" href="javascript:typesChart.filter(null).redrawGroup()">reset</a>
         </div>
       </div>
+      <div id="message" style="display: none;"><div class="centered"></div></div>
     </div>
     <script type="text/javascript">
+      function display_error(message, details, url) {
+          d3.select('#message')
+              .style('display', null)
+              .html('<div><div><h1>' + message + '</h1></div>' +
+                    (details ? '<code><pre>' + details + '</pre></code>' : '') +
+                    (url ? '<div><a href="' + url + '">query URL</a></div>' : '') +
+                    '</div>');
+          throw new Error(message);
+      }
       var timesChart = dc.lineChart("#times");
       var typesChart = dc.barChart("#types");
       var qs = querystring.parse();
       if(!qs.server) {
-          d3.select('body').append('p').text('Need ?server');
+          display_error('Need ?server in URL');
       }
       else {
           var nf = xfilter(qs.server)

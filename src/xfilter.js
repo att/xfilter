@@ -117,7 +117,7 @@ function xfilter(server) {
                     .unpack_result(result)
                     .sort(key_ascending)
                     .map(function(kv) {
-                        return {key: xform ? xform.fro(kv.key) : kv.key, value: kv.value};
+                        return {key: xform ? xform.fro(kv.key, group.state) : kv.key, value: kv.value};
                     });
             }
             if(validate(result))
