@@ -51,29 +51,15 @@ module.exports = function (grunt) {
                 }
             }
         },
-        jscs: {
+        eslint: {
             source: {
                 src: [
                     '<%= conf.src %>/**/*.js',
                     '!<%= conf.src %>/{banner,footer}.js',
-                    '<%= conf.spec %>/**/*.js',
-                    'Gruntfile.js'
-                ],
-                options: {
-                    config: '.jscsrc'
-                }
-            }
-        },
-        jshint: {
-            source: {
-                src: [
-                    '<%= conf.src %>/**/*.js',
-                    '!<%= conf.src %>/{banner,footer}.js',
-                    'Gruntfile.js'
-                ],
-                options: {
-                    jshintrc: '.jshintrc'
-                }
+                    'Gruntfile.js'],
+            },
+            options: {
+                configFile: '.eslintrc'
             }
         },
         watch: {

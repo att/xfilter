@@ -35,7 +35,6 @@
     "grunt-contrib-connect": "~0.11.2",
     "grunt-contrib-copy": "~0.8.0",
     "grunt-contrib-cssmin": "3.x",
-    "grunt-contrib-jshint": "^2.1.0",
     "grunt-contrib-uglify-es": "~3.3.0",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-gh-pages": "^3.1.0",
