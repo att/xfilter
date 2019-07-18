@@ -54,8 +54,9 @@
           display_error('Need ?server in URL');
       }
       else {
+          var ncversion = +qs.version;
           var nf = xfilter(qs.server)
-              .engine(xfilter.nanocube_queries());
+              .engine(xfilter.nanocube_queries(ncversion));
           nf.start()
               .then(function(result) {
                   function commitHandler(isRender, k) {

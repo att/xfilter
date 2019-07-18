@@ -1,4 +1,4 @@
-xfilter.nanocube_queries = function() {
+xfilter.nanocube_queries = function(version = 3) {
     var _start_time, _resolution;
     function ms_mult(suffix) {
         var mult = 1;
@@ -38,7 +38,7 @@ xfilter.nanocube_queries = function() {
             });
         },
         fetch_schema: function(query_url) {
-            return d3.json(query_url('schema')).then(function(schema) {
+            return d3.json(query_url(version === 4 ? 'schema()' : 'schema')).then(function(schema) {
                 var fields = {}, xform = {};
                 schema.fields.forEach(function(f) {
                     fields[f.name] = f;
